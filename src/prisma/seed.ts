@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole, IssueStatus, IssuePriority } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -142,7 +142,7 @@ async function main() {
       password: hashedPassword,
       firstName: 'Διαχειριστής',
       lastName: 'Συστήματος',
-      role: 'ADMIN',
+      role: UserRole.ADMIN,
       phone: '+30210000000'
     }
   });
@@ -157,7 +157,7 @@ async function main() {
       password: supervisorPassword,
       firstName: 'Επόπτης',
       lastName: 'Εργασιών',
-      role: 'SUPERVISOR',
+      role: UserRole.SUPERVISOR,
       phone: '+30210000001'
     }
   });
@@ -172,7 +172,7 @@ async function main() {
       password: officePassword,
       firstName: 'Γραφείο',
       lastName: 'Υποστήριξης',
-      role: 'OFFICE',
+      role: UserRole.OFFICE,
       phone: '+30210000002'
     }
   });
@@ -187,7 +187,7 @@ async function main() {
       password: userPassword,
       firstName: 'Γιάννης',
       lastName: 'Παπαδόπουλος',
-      role: 'USER',
+      role: UserRole.USER,
       phone: '+30690000000'
     }
   });
@@ -216,7 +216,7 @@ async function main() {
         categoryId: roadCategory.id,
         subcategoryId: potholeSubcat?.id,
         createdById: regularUser.id,
-        priority: 'HIGH',
+        priority: IssuePriority.HIGH,
         isEmergency: false,
         referenceNumber: 'GLY-2024-001'
       },
@@ -230,8 +230,8 @@ async function main() {
         subcategoryId: lightSubcat?.id,
         createdById: regularUser.id,
         assignedToId: supervisorUser.id,
-        status: 'IN_PROGRESS',
-        priority: 'MEDIUM',
+        status: IssueStatus.IN_PROGRESS,
+        priority: IssuePriority.MEDIUM,
         isEmergency: false,
         referenceNumber: 'GLY-2024-002'
       }
