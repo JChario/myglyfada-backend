@@ -1,0 +1,61 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: myglyfada-db
+    plan: free
+    databaseName: myglyfada
+    databaseUser: myglyfada
+    region: frankfurt
+    ipAllowList: [] # Allow all IPs (Render services)
+
+  # Backend Web Service
+  - type: web
+    name: myglyfada-backend
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: myglyfada-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: PORT
+        value: 10000
+      - key: ALLOWED_ORIGINS
+        sync: false # Set manually to your Hostinger domain
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false # Set manually if needed
+    disk:
+      name: myglyfada-uploads
+      mountPath: /opt/render/project/src/uploads
+      sizeGB: 1
+
+# Notes:
+# 1. Free tier includes:
+#    - 750 hours/month (enough for one service running 24/7)
+#    - PostgreSQL: 1GB storage, 90 days retention
+#    - 100GB bandwidth/month
+#    - Services sleep after 15 min inactivity
+#
+# 2. After creating the service:
+#    - Set ALLOWED_ORIGINS to your Hostinger domain
+#    - Optionally set GOOGLE_MAPS_API_KEY
+#
+# 3. Database URL is automatically set from the database service
+#
+# 4. JWT_SECRET is auto-generated securely by Render
+#
+# 5. Uploads are stored on a persistent disk (survives deployments)

@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite doesn't support enums, using strings with validation in code
+// UserRole: ADMIN, SUPERVISOR, USER, OFFICE
+// IssueStatus: PENDING, IN_PROGRESS, COMPLETED, REJECTED, CANCELLED  
+// IssuePriority: LOW, MEDIUM, HIGH, EMERGENCY
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  role        String @default("USER")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  createdIssues Issue[] @relation("IssueCreator")
+  assignedIssues Issue[] @relation("IssueAssignee")
+  comments      Comment[]
+  uploadedPhotos Photo[]
+  
+  @@map("users")
+}
+
+model Category {
+  id          String @id @default(cuid())
+  name        String
+  nameEn      String?
+  description String?
+  color       String // Hex color code for UI
+  icon        String? // Icon identifier
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  subcategories Subcategory[]
+  issues        Issue[]
+  
+  @@map("categories")
+}
+
+model Subcategory {
+  id          String @id @default(cuid())
+  name        String
+  nameEn      String?
+  description String?
+  color       String // Hex color code for UI
+  icon        String? // Icon identifier
+  estimatedDays Int? // Estimated completion days
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Foreign Keys
+  categoryId  String
+  
+  // Relations
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  issues      Issue[]
+  
+  @@map("subcategories")
+}
+
+model Issue {
+  id            String        @id @default(cuid())
+  title         String
+  description   String
+  address       String
+  latitude      Float?
+  longitude     Float?
+  status        String   @default("PENDING")
+  priority      String @default("MEDIUM")
+  isEmergency   Boolean       @default(false)
+  referenceNumber String      @unique // Auto-generated reference number
+  
+  // Tracking fields
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  completedAt   DateTime?
+  estimatedCompletionDate DateTime?
+  
+  // Foreign Keys
+  createdById   String
+  assignedToId  String?
+  categoryId    String
+  subcategoryId String?
+  
+  // Relations
+  createdBy     User          @relation("IssueCreator", fields: [createdById], references: [id])
+  assignedTo    User?         @relation("IssueAssignee", fields: [assignedToId], references: [id])
+  category      Category      @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  photos        Photo[]
+  comments      Comment[]
+  
+  @@map("issues")
+}
+
+model Photo {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  path        String
+  description String?
+  createdAt   DateTime @default(now())
+  
+  // Foreign Keys
+  issueId     String
+  uploadedById String
+  
+  // Relations
+  issue       Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  uploadedBy  User  @relation(fields: [uploadedById], references: [id])
+  
+  @@map("photos")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  isInternal Boolean @default(false) // Internal comments visible only to staff
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Foreign Keys
+  issueId   String
+  authorId  String
+  
+  // Relations
+  issue     Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author    User  @relation(fields: [authorId], references: [id])
+  
+  @@map("comments")
+}
+
+model Settings {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("settings")
+}
